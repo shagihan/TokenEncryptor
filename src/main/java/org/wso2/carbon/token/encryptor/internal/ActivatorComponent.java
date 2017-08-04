@@ -26,10 +26,8 @@ import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.token.encryptor.ClientSecretDTO;
 import org.wso2.carbon.token.encryptor.Database;
 import org.wso2.carbon.token.encryptor.TokenDTO;
-import org.wso2.carbon.core.util.CryptoException;
-import org.wso2.carbon.core.util.CryptoUtil;
+import org.wso2.carbon.token.encryptor.Utils;
 
-import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.ListIterator;
@@ -41,6 +39,7 @@ import java.util.ListIterator;
 public class ActivatorComponent {
     private static final Log log = LogFactory.getLog(ActivatorComponent.class);
     Database database;
+
     private static boolean[] validKeyChars = new boolean[128];
 
     static {
@@ -58,93 +57,52 @@ public class ActivatorComponent {
      */
     protected void activate(ComponentContext context) {
         log.info("Token Encryptor activates");
+        List[] resultsList;
 
         database = new Database();
 
         try {
-            List<TokenDTO> tokens = database.getTokens();
-
-            for (TokenDTO token : tokens) {
-                log.info("Token entry -  Access Token :" + token.getAccessToken() +
-                        ", Refresh Token :" + token.getRefreshToken() +
-                        ", Primary Key :" + token.getTokenID());
-            }
-
-
-            List<ClientSecretDTO> clientSecrets = database.getClientSecrets();
-
-            for (ClientSecretDTO clientSecret : clientSecrets) {
-                log.info("Client Secret entry - Client Secret :" + clientSecret.getClientSecret() +
-                        ", Primary Key :" + clientSecret.getConsumerAppID());
-            }
-
-        } catch (SQLException e) {
-            log.error("Error detected when accessing database", e);
-        }
-
-        //*******************
-        try {
+            //Retrieving tokens and client secrets
             List<ClientSecretDTO> clientSecretDTOList = database.getClientSecrets();
             List<TokenDTO> tokenDTOList = database.getTokens();
-            List resultsList = iterator(clientSecretDTOList, tokenDTOList);
-            log.info("updating client secrets in db");
-            database.updateClientSecrets(resultsList);
+
+            //Processing client secrets and tokens
+            resultsList = iterator(clientSecretDTOList, tokenDTOList);
+
+            log.info("updating(encrypting) client secrets in db...");
+            database.updateClientSecrets(resultsList[0]);
+
+            log.info("updating(encrypting) tokens secrets in db...");
+            database.updateTokens(resultsList[1]);
         } catch (SQLException e) {
-            log.error("Error while accessing database", e);
+            log.error("Error while accessing the database", e);
         }
     }
 
-    public static List iterator(List<ClientSecretDTO> clientSecretDTOList, List<TokenDTO> tokenDTOList) {
+    public static List[] iterator(List<ClientSecretDTO> clientSecretDTOList, List<TokenDTO> tokenDTOList) {
         for (final ListIterator<ClientSecretDTO> i = clientSecretDTOList.listIterator(); i.hasNext(); ) {
             final ClientSecretDTO element = i.next();
-            if (!isEncrypted(element)) {
-                log.info(element.getClientSecret() + "is not encrypted");
-                i.set(encryptUtil(element));
+            if (!Utils.isEncrypted(element.getClientSecret())) {
+                log.info("Client secret: " + element.getClientSecret() + " is not encrypted");
+                element.setClientSecret(Utils.encryptionUtil(element.getClientSecret()));
+                i.set(element);
             }
         }
-        return clientSecretDTOList;
-    }
-
-    public static boolean isEncrypted(ClientSecretDTO clientSecretDTO) {
-        try {
-            byte[] decryptedKey = CryptoUtil.getDefaultCryptoUtil().base64DecodeAndDecrypt(clientSecretDTO.getClientSecret());
-            String decryptedKeyValue = new String(decryptedKey, Charset.defaultCharset());
-
-            return isKeyValid(decryptedKeyValue);
-        } catch (CryptoException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public static ClientSecretDTO encryptUtil(ClientSecretDTO clientSecretDTO) {
-        log.info("Encrypting: " + clientSecretDTO.getClientSecret());
-        byte[] clientSecret = clientSecretDTO.getClientSecret().getBytes();//if not working use another Byte conversion mmethod
-        try {
-            String encryptedKey = CryptoUtil.getDefaultCryptoUtil().encryptAndBase64Encode(clientSecret);
-            clientSecretDTO.setClientSecret(encryptedKey);//set encrypted value
-        } catch (CryptoException e) {
-            e.printStackTrace();
-        }
-
-        return clientSecretDTO;
-    }
-
-    public static boolean isKeyValid(String decryptedKeyValue) {
-        for (int i = 0; i < decryptedKeyValue.length(); ++i) {
-            char keyChar = decryptedKeyValue.charAt(i);
-
-            if (validKeyChars.length <= keyChar) {
-                return false;
+        for (final ListIterator<TokenDTO> i = tokenDTOList.listIterator(); i.hasNext(); ) {
+            final TokenDTO element = i.next();
+            //Checking both access and refresh tokens for if encrypted
+            if (!Utils.isEncrypted(element.getAccessToken())) {
+                log.info("Access token: " + element.getAccessToken() + " is not encrypted");
+                element.setAccessToken(Utils.encryptionUtil(element.getAccessToken()));
+                i.set(element);
             }
-
-            if (!validKeyChars[keyChar]) {
-                return false;
+            if (!Utils.isEncrypted(element.getRefreshToken())) {
+                log.info("Refresh token: " + element.getRefreshToken() + " is not encrypted");
+                element.setRefreshToken(Utils.encryptionUtil(element.getRefreshToken()));
+                i.set(element);
             }
         }
-
-        return true;
+        List[] resultsList = {clientSecretDTOList, tokenDTOList};
+        return resultsList;
     }
-
-
 }
