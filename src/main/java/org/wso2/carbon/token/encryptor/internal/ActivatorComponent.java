@@ -27,7 +27,6 @@ import org.wso2.carbon.token.encryptor.ClientSecretDTO;
 import org.wso2.carbon.token.encryptor.Database;
 import org.wso2.carbon.token.encryptor.TokenDTO;
 import org.wso2.carbon.token.encryptor.TokenProcessor;
-
 import java.sql.SQLException;
 import java.util.*;
 
@@ -38,56 +37,25 @@ import java.util.*;
 public class ActivatorComponent {
     private static final Log log = LogFactory.getLog(ActivatorComponent.class);
     private boolean isDbConnected = false;
-
     /**
      * Method to activate bundle.
      *
      * @param context OSGi component context.
      */
     protected void activate(ComponentContext context) {
+        if (System.getProperty("encrypt") == null) {
+            return;
+        }
         log.info("Token Encryptor activates");
         Database database = new Database();
         TokenProcessor processor = TokenProcessor.getSharedProcessor();
         try {
             List<TokenDTO> tokens = database.getTokens();
-            for (TokenDTO token : tokens) {
-                log.info("Token entry -  Access Token :" + token.getAccessToken() +
-                        ", Refresh Token :" + token.getRefreshToken() +
-                        ", Primary Key :" + token.getTokenID());
-                processor.setRefreshToken(token.getRefreshToken());
-                processor.setAccessToken(token.getAccessToken());
-                processor.processEncryptionOnToken(token.getTokenID());
-            }
             List<ClientSecretDTO> clientSecrets = database.getClientSecrets();
-            for (ClientSecretDTO clientSecret : clientSecrets) {
-                log.info("Client Secret entry - Client Secret :" + clientSecret.getClientSecret() +
-                        ", Primary Key :" + clientSecret.getConsumerAppID());
-                processor.setClientSecret(clientSecret.getClientSecret());
-                processor.processEncryptionOnToken(Integer.valueOf(clientSecret.getConsumerAppID()).toString());
-            }
-            isDbConnected = true;
+            processor.processEncryptionOnToken(tokens,clientSecrets,database);
         } catch (SQLException e) {
             log.error("Error detected when accessing database", e);
-            isDbConnected = false;
-        }finally {
-            if (isDbConnected) {
-                try {
-                    if (processor.returnEncryptedSecretKeys() != null) {
-                        database.updateClientSecrets(processor.returnEncryptedSecretKeys());
-                    }
-                    if (processor.returnEncryptedTokenKeys() != null) {
-                        database.updateTokens(processor.returnEncryptedTokenKeys());
-                    }
-                } catch (SQLException e){
-                    e.printStackTrace();
-                }
-            }
         }
     }
-
-
-
-
-
 
 }

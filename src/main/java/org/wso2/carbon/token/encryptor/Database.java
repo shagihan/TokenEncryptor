@@ -65,7 +65,7 @@ public class Database {
                 }
             }
         }
-
+        log.info("FETCHING TOKENDTOS --------------");
         return tokens;
     }
 
@@ -89,7 +89,7 @@ public class Database {
                 }
             }
         }
-
+        log.info("FETCHING CLIENTSECRETDTOS");
         return clientSecrets;
     }
 
@@ -112,6 +112,7 @@ public class Database {
 
                 statement.executeBatch();
                 connection.commit();
+                log.info("UPDATE KEY QUERY EXECUTED-----");
             }
             catch (SQLException e) {
                 connection.rollback();
@@ -136,6 +137,7 @@ public class Database {
 
                 statement.executeBatch();
                 connection.commit();
+                log.info("UPDATE SECRET KEY QUERY EXECUTED-----");
 
             } catch (SQLException e) {
                 connection.rollback();
