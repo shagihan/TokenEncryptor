@@ -91,9 +91,6 @@ public class TokenProcessor {
     private static boolean isValidCharSet(final String key) {
         for (int i = 0; i < key.length(); ++i) {
             char keyChar = key.charAt(i);
-            if (validChars.length <= keyChar) {
-                return false;
-            }
             if (!validChars[keyChar]) {
                 return false;
             }
