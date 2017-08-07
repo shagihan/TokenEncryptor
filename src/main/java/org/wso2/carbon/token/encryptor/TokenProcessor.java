@@ -1,6 +1,5 @@
 package org.wso2.carbon.token.encryptor;
 import org.wso2.carbon.core.util.CryptoException;
-
 import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
@@ -58,7 +57,7 @@ public class TokenProcessor {
        }
     }
 
-    private void encrypt(TokenDTO dto) throws CryptoException {
+    private void encrypt(final TokenDTO dto) throws CryptoException {
         boolean isEncrypted =false;
         if (isValidCharSet(dto.getRefreshToken())){//is a plain text
              String value = CryptoUtil.getDefaultCryptoUtil().encryptAndBase64Encode(dto.getRefreshToken().getBytes(Charset.defaultCharset()));
@@ -75,7 +74,7 @@ public class TokenProcessor {
         }
     }
 
-    private void encrypt(ClientSecretDTO dto) throws CryptoException {
+    private void encrypt(final ClientSecretDTO dto) throws CryptoException {
         if (isValidCharSet(dto.getClientSecret())){//is a plain text
             String value = CryptoUtil.getDefaultCryptoUtil().encryptAndBase64Encode(dto.getClientSecret().getBytes(Charset.defaultCharset()));
             dto.setClientSecret(value);
@@ -91,6 +90,9 @@ public class TokenProcessor {
     private static boolean isValidCharSet(final String key) {
         for (int i = 0; i < key.length(); ++i) {
             char keyChar = key.charAt(i);
+            if (validChars.length <= keyChar) {
+                return false;
+            }
             if (!validChars[keyChar]) {
                 return false;
             }
