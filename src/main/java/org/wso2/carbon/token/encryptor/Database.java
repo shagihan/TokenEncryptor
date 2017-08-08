@@ -84,6 +84,7 @@ public class Database {
 
 
     public void updateTokens(List<TokenDTO> tokens) throws SQLException {
+        log.info("updateTokens ----->"+tokens.size());
         final String query = "UPDATE IDN_OAUTH2_ACCESS_TOKEN SET ACCESS_TOKEN = ?, REFRESH_TOKEN = ?" +
                 " WHERE TOKEN_ID = ?";
         try (Connection connection = APIMgtDBUtil.getConnection();
@@ -109,6 +110,7 @@ public class Database {
 
 
     public void updateClientSecrets(List<ClientSecretDTO> clientSecrets) throws SQLException {
+        log.info("updateClientSecrets ----->"+clientSecrets.size());
         final String query = "UPDATE IDN_OAUTH_CONSUMER_APPS SET CONSUMER_SECRET = ? WHERE ID = ?";
         try (Connection connection = APIMgtDBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {

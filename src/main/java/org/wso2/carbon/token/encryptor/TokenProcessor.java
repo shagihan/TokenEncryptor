@@ -52,6 +52,7 @@ public class TokenProcessor {
                    log.info("Ignoring the encryption "+clientSecret.getClientSecret(),e);
                }
            }
+
            database.updateTokens(updatedTokens);
            database.updateClientSecrets(updatedSecrets);
        } catch (SQLException e) {
