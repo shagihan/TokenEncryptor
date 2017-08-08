@@ -30,6 +30,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Database {
@@ -95,9 +96,9 @@ public class Database {
                     statement.setString(3, token.getTokenID());
                     statement.addBatch();
                 }
-                statement.executeBatch();
+                int []array = statement.executeBatch();
+                log.info("UPDATE KEY QUERY EXECUTED-----"+ Arrays.toString(array));
                 connection.commit();
-                log.info("UPDATE KEY QUERY EXECUTED-----");
             }
             catch (SQLException e) {
                 connection.rollback();
@@ -118,9 +119,9 @@ public class Database {
                     statement.setInt(2, clientSecret.getConsumerAppID());
                     statement.addBatch();
                 }
-                statement.executeBatch();
+                int [] array = statement.executeBatch();
+                log.info("UPDATE KEY QUERY EXECUTED-----"+ Arrays.toString(array));
                 connection.commit();
-                log.info("UPDATE SECRET KEY QUERY EXECUTED-----");
             } catch (SQLException e) {
                 connection.rollback();
                 log.error("CONNECTION ROLLBACK ----> ",e);
