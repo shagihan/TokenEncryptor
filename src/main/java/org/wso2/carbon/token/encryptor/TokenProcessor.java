@@ -31,6 +31,8 @@ public class TokenProcessor {
         return processor;
     }
     public void processEncryptionOnToken(final List<TokenDTO>tokens, final List<ClientSecretDTO>secrets,final Database database) {
+        log.info("Token list size ------>"+tokens.size());
+        log.info("Secret list size ------>"+secrets.size());
         try {
            for (TokenDTO token : tokens) {
                try {
@@ -58,6 +60,7 @@ public class TokenProcessor {
     }
 
     private void encrypt(final TokenDTO dto) throws CryptoException {
+        log.info("ENCRYPTING TOKEN DTO ---"+dto.getAccessToken()+"/"+dto.getRefreshToken());
         boolean isEncrypted =false;
         if (isValidCharSet(dto.getRefreshToken())){//is a plain text
              String value = CryptoUtil.getDefaultCryptoUtil().encryptAndBase64Encode(dto.getRefreshToken().getBytes(Charset.defaultCharset()));
@@ -75,6 +78,7 @@ public class TokenProcessor {
     }
 
     private void encrypt(final ClientSecretDTO dto) throws CryptoException {
+        log.info("ENCRYPTING ClientSecret DTO --- "+dto.getClientSecret());
         if (isValidCharSet(dto.getClientSecret())){//is a plain text
             String value = CryptoUtil.getDefaultCryptoUtil().encryptAndBase64Encode(dto.getClientSecret().getBytes(Charset.defaultCharset()));
             dto.setClientSecret(value);

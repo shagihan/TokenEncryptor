@@ -34,8 +34,6 @@ import java.util.List;
 
 public class Database {
     private static final Log log = LogFactory.getLog(Database.class);
-
-
     public Database() {
         try {
             APIMgtDBUtil.initialize();
@@ -46,50 +44,40 @@ public class Database {
 
     public List<TokenDTO> getTokens() throws SQLException {
         final String query = "SELECT TOKEN_ID, ACCESS_TOKEN, REFRESH_TOKEN FROM IDN_OAUTH2_ACCESS_TOKEN";
-
         List<TokenDTO> tokens = new ArrayList<>();
-
         try (Connection connection = APIMgtDBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-
             statement.execute();
-
             try (ResultSet rs =  statement.getResultSet()) {
                 while (rs.next()) {
                     TokenDTO tokenDTO = new TokenDTO();
                     tokenDTO.setTokenID(rs.getString("TOKEN_ID"));
                     tokenDTO.setAccessToken(rs.getString("ACCESS_TOKEN"));
                     tokenDTO.setRefreshToken(rs.getString("REFRESH_TOKEN"));
-
                     tokens.add(tokenDTO);
                 }
             }
         }
-        log.info("FETCHING TOKENDTOS --------------");
+        log.info("FETCHING TOKENS --------------");
         return tokens;
     }
 
     public List<ClientSecretDTO> getClientSecrets() throws SQLException {
         final String query = "SELECT ID, CONSUMER_SECRET FROM IDN_OAUTH_CONSUMER_APPS";
-
         List<ClientSecretDTO> clientSecrets = new ArrayList<>();
-
         try (Connection connection = APIMgtDBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.execute();
-
+             statement.execute();
             try (ResultSet rs =  statement.getResultSet()) {
                 while (rs.next()) {
                     ClientSecretDTO clientSecretDTO = new ClientSecretDTO();
                     clientSecretDTO.setConsumerAppID(rs.getInt("ID"));
                     clientSecretDTO.setClientSecret(rs.getString("CONSUMER_SECRET"));
-
                     clientSecrets.add(clientSecretDTO);
                 }
             }
         }
-        log.info("FETCHING CLIENTSECRETDTOS");
+        log.info("FETCHING CLIENT SECRETS");
         return clientSecrets;
     }
 
@@ -97,7 +85,6 @@ public class Database {
     public void updateTokens(List<TokenDTO> tokens) throws SQLException {
         final String query = "UPDATE IDN_OAUTH2_ACCESS_TOKEN SET ACCESS_TOKEN = ?, REFRESH_TOKEN = ?" +
                 " WHERE TOKEN_ID = ?";
-
         try (Connection connection = APIMgtDBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             try {
@@ -106,16 +93,15 @@ public class Database {
                     statement.setString(1, token.getAccessToken());
                     statement.setString(2, token.getRefreshToken());
                     statement.setString(3, token.getTokenID());
-
                     statement.addBatch();
                 }
-
                 statement.executeBatch();
                 connection.commit();
                 log.info("UPDATE KEY QUERY EXECUTED-----");
             }
             catch (SQLException e) {
                 connection.rollback();
+                log.error("CONNECTION ROLLBACK ----> ",e);
             }
         }
     }
@@ -123,7 +109,6 @@ public class Database {
 
     public void updateClientSecrets(List<ClientSecretDTO> clientSecrets) throws SQLException {
         final String query = "UPDATE IDN_OAUTH_CONSUMER_APPS SET CONSUMER_SECRET = ? WHERE ID = ?";
-
         try (Connection connection = APIMgtDBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             try {
@@ -131,16 +116,14 @@ public class Database {
                     connection.setAutoCommit(false);
                     statement.setString(1, clientSecret.getClientSecret());
                     statement.setInt(2, clientSecret.getConsumerAppID());
-
                     statement.addBatch();
                 }
-
                 statement.executeBatch();
                 connection.commit();
                 log.info("UPDATE SECRET KEY QUERY EXECUTED-----");
-
             } catch (SQLException e) {
                 connection.rollback();
+                log.error("CONNECTION ROLLBACK ----> ",e);
             }
         }
     }
